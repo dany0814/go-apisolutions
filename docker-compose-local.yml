@@ -1,0 +1,44 @@
+version: "3.9"
+services:
+  server:
+    container_name: api_solutions
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - .:/app
+    networks:
+      - auth-net
+    env_file:
+      - ${PWD}/.env
+    ports:
+      - '8080:8080'
+    restart: unless-stopped
+    depends_on:
+      - database
+
+  database:
+    container_name: mongo_engine
+    image: mongo:4.4
+    restart: unless-stopped
+    environment:
+      - MONGO_INITDB_DATABASE=${DATABASE}
+      - MONGO_INITDB_ROOT_USERNAME=${ROOT_USERNAME}
+      - MONGO_INITDB_ROOT_PASSWORD=${ROOT_PASSWORD}
+      - MONGO_INITDB_USERNAME=${USERNAME_MONGO}
+      - MONGO_INITDB_PASSWORD=${PASSWORD_MONGO}
+    ports:
+      - ${PORT_MONGODB}:27017 #to production mode is not enable port expose
+    networks:
+      - auth-net
+    volumes:
+      - ./volumes/mongodb/init-mongo.sh:/docker-entrypoint-initdb.d/init-mongo.sh:ro
+      - api:/data/configdb # volumen dentro de docker
+      - api:/data/db # volumen dentro de docker
+# To local testing
+networks:
+  auth-net:
+    name: auth-net
+    driver: bridge
+volumes:
+  api:

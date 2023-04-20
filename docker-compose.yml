@@ -1,0 +1,44 @@
+version: "3.9"
+networks:
+  network_iot:
+    external:
+      name: iot-net
+services:
+  server:
+    container_name: api_solutions
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - .:/app
+    environment: # requiere que esté corriendo nginx proxy con la imagen de jwilder
+      - VIRTUAL_HOST=${HOST_API_SOLUTIONS}
+      - VIRTUAL_PORT=8080
+      - LETSENCRYPT_HOST=${HOST_API_SOLUTIONS}
+      - LETSENCRYPT_EMAIL=jcanahuirev@gmail.com
+    networks:
+      - network_iot #auth-net - local test network
+    restart: unless-stopped
+    depends_on:
+      - database
+
+  database:
+    container_name: vakalan_mongo
+    image: mongo:4.4
+    restart: unless-stopped
+    environment:
+      - MONGO_INITDB_DATABASE=${DATABASE}
+      - MONGO_INITDB_ROOT_USERNAME=${ROOT_USERNAME}
+      - MONGO_INITDB_ROOT_PASSWORD=${ROOT_PASSWORD}
+      - MONGO_INITDB_USERNAME=${USERNAME_MONGO}
+      - MONGO_INITDB_PASSWORD=${PASSWORD_MONGO}
+    ports:
+      - ${PORT_MONGODB}:27017 #to production mode is not enable port expose
+    networks:
+      - network_iot #auth-net local testing network
+    volumes:
+      - ./volumes/mongodb/init-mongo.sh:/docker-entrypoint-initdb.d/init-mongo.sh:ro
+      - api:/data/configdb # volumen dentro de docker
+      - api:/data/db # volumen dentro de docker
+volumes:
+  api:
